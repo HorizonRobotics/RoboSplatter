@@ -40,7 +40,8 @@ pip install -e . #uv
 
 ```sh
 # 安装 huggingface_hub
-# pip
+# pip install huggingface_hub
+
 python -m huggingface_hub.commands.huggingface_cli download HorizonRobotics/RoboSplatter --repo-type dataset --local-dir ./assets
 # desk2.ply, golden_cup.ply, lab_table.ply, office.ply 等文件
 ```
