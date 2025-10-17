@@ -15,36 +15,43 @@
 ## 🛠️ 安装指南 | Installation Guide
 
 ### Pre-requests
-- [uv](https://docs.astral.sh/uv/)
-- [git-lfs](https://git-lfs.com/)
+- Python >= 3.10
 - CUDA >= 11.8
+- (Optional) [uv](https://docs.astral.sh/uv/) for faster environment setup
 
 ### 环境配置 ｜ Environment Configuration
 
+
 ```sh
-# 1. Clone the repository:
+# 1. Clone the repository
 git clone https://github.com/HorizonRobotics/RoboSplatter.git
-cd robosplatter
+cd RoboSplatter
 
-# 2. Set up a uv environment:
-uv sync
+# 2. Create conda environment
+# conda create -n robosplatter python=3.10 -y
+# conda activate robosplatter
 
-# 3. Install the required dependencies (Take few mins to compile gsplat):
-uv pip install -e .
-pre-commit install # only for developer
+# 3. Install dependencies
+pip install -e . #uv
+
 ```
 
-### 下载资产 ｜ Download assets
+### 下载资产 ｜ Download Assets
 
-The example assets will exist in `assets/example_asset` if you have configured `git-lfs` correctly. If you do not have assets in `assets/example_asset`, please make sure you have configured `git-lfs` properly.
+```sh
+# 安装 huggingface_hub
+# pip
+python -m huggingface_hub.commands.huggingface_cli download HorizonRobotics/RoboSplatter --repo-type dataset --local-dir ./assets
+# desk2.ply, golden_cup.ply, lab_table.ply, office.ply 等文件
+```
 
 ## 🚀 运行指南 | Running Guide
 
 ### GS渲染 | GS Render
 
-#### render background
+#### 渲染背景场景 | Render Background Scene
 ```sh
-uv run render-cli --data_file config/gs_data_basic.yaml \
+render-cli --data_file config/gs_data_basic.yaml \
   --camera_extrinsic "[[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], [0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]]" \
   --camera_intrinsic "[[606.6, 0.0, 326.3], [0.0, 607.6, 242.7], [0.0, 0.0, 1.0]]" \
   --image_height 480 \
@@ -53,9 +60,9 @@ uv run render-cli --data_file config/gs_data_basic.yaml \
   --output_dir "./output/background"
 ```
 
-#### render scene batch
+#### 批量渲染场景 | Render Scene Batch
 ```sh
-uv run robo_splatter/scripts/render_scene_batch.py --data_file config/gs_data_fg_bg_mix.yaml \
+python robo_splatter/scripts/render_scene_batch.py --data_file config/gs_data_fg_bg_mix.yaml \
   --camera_extrinsic "[[0, 1.5, 0, 0.0, -0.7071, 0.0, -0.7071], [0, 1.5, 0.0, 0.0, -0.5, 0.0, -0.866], [0, 1.5, 0.0, 0.0, -0.2588, 0.0, -0.9659], [0, 1.5, 0.0, 0.0, 0.0, 0.0, -1.0], [0, 1.5, 0.0, 0.0, 0.2588, 0.0, -0.9659], [0, 1.5, 0.0, 0.0, 0.5, 0.0, -0.866], [0, 1.5, 0.0, 0.0, 0.7071, 0.0, -0.7071], [0, 1.5, 0.0, 0.0, 0.866, 0.0, -0.5], [0, 1.5, 0.0, 0.0, 0.9659, 0.0, -0.2588], [0, 1.5, 0.0, 0.0, 1.0, 0.0, 0.0], [0, 1.5, 0.0, 0.0, 0.9659, 0.0, 0.2588], [0, 1.5, 0.0, 0.0, 0.866, 0.0, 0.5],[0, 1.5, 0, 0.0, -0.7071, 0.0, -0.7071]]" \
   --camera_intrinsic "[[256.0, 0.0, 512.0], [0.0, 256.0, 512.0], [0.0, 0.0, 1.0]]" \
   --image_height 1024 \
@@ -64,6 +71,10 @@ uv run robo_splatter/scripts/render_scene_batch.py --data_file config/gs_data_fg
   --output_dir "./output/mix_bg_fg_demo" \
   --gen_mp4_path "./output/mix_bg_fg_demo/render.mp4"
 ```
+
+**输出文件**：
+- 渲染图片将保存在指定的 `output_dir` 目录
+- 如果指定了 `--gen_mp4_path`，将生成视频文件
 
 ## 🚗 目录结构 | Directory Structure
 
@@ -75,6 +86,14 @@ uv run robo_splatter/scripts/render_scene_batch.py --data_file config/gs_data_fg
   - **scripts/**: 使用示例 | 3D GS example use cases
 <!-- - **projects/**: 更多综合使用示例 | More comprehensive sim usage examples(Coming Soon) -->
 ---
+
+
+
+## For developers only
+```sh
+pip install -e .[dev] && pre-commit install
+```
+
 
 ## 🙏 致谢 | Acknowledgments
 

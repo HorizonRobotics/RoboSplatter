@@ -26,6 +26,7 @@ import torch.nn.functional as F
 import yaml
 from gsplat.cuda._wrapper import spherical_harmonics
 from plyfile import PlyData, PlyElement
+from scipy.spatial.transform import Rotation
 from robo_splatter.models.basic import (
     SH2RGB,
     GaussianData,
@@ -36,7 +37,6 @@ from robo_splatter.models.basic import (
     quat_to_rotmat,
     rotation_matrix_to_quaternion,
 )
-from robo_splatter.models.camera import BaseCamera
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -116,7 +116,6 @@ class VanillaGaussians(nn.Module):
             ),
             dim=1,
         )
-
         opacities = torch.tensor(
             plydata.elements[0]["opacity"], dtype=torch.float32
         ).unsqueeze(-1)
@@ -340,6 +339,52 @@ class VanillaGaussians(nn.Module):
 
         return rgbs  # (n_cam, N, 3)
 
+    def apply_global_transform(self, global_pose: torch.Tensor) -> None:
+        """Apply the global transform to the GS models.
+
+        Args:
+            global_pose: torch.Tensor, global pose (7,)
+                or (4,4) or (batch, 4,4).
+
+        """
+        if global_pose.shape == (7,):
+            # [x, y, z, qx, qy, qz, qw] -> convert to (x, y, z, qw, qx, qy, qz)
+            x, y, z, qx, qy, qz, qw = global_pose.tolist()
+            rot = Rotation.from_quat([qx, qy, qz, qw]).as_matrix()
+            t = np.array([x, y, z])
+            device = self._means.device
+            rot = torch.tensor(rot, dtype=self._means.dtype, device=device)
+            t = torch.tensor(t, dtype=self._means.dtype, device=device)
+            # Convert rotation matrix to quaternion (wxyz format)
+            global_quat = rotation_matrix_to_quaternion(
+                rot.unsqueeze(0)
+            ).squeeze(0)
+        elif global_pose.shape[-2:] == (4, 4):
+            rot = global_pose[:3, :3]
+            t = global_pose[:3, 3]
+            # Convert rotation matrix to quaternion (wxyz format)
+            global_quat = rotation_matrix_to_quaternion(
+                rot.unsqueeze(0)
+            ).squeeze(0)
+        else:
+            raise ValueError("global_pose must be [7] or [4,4] shape")
+
+        # Transform means: R @ means + t
+        self._means = (
+            torch.bmm(
+                rot.unsqueeze(0).expand(self._means.shape[0], -1, -1),
+                self._means.unsqueeze(-1),
+            ).squeeze(-1)
+            + t
+        )
+
+        # Transform orientations: quat_mult(global_quat, local_quat)
+        self._quats = self.quat_norm(self._quats)
+        self._quats = quat_mult(
+            global_quat.unsqueeze(0).expand(self._quats.shape[0], -1),
+            self._quats,
+        )
+
     def get_gaussians(
         self,
         c2w: torch.Tensor,
@@ -353,7 +398,6 @@ class VanillaGaussians(nn.Module):
             filter_mask: mask for filtering gaussians.
             apply_activate: whether to activate the gaussians.
         """
-
         # get colors of gaussians
         rgbs = self._compute_gs_rgb(c2w, self._means)
 

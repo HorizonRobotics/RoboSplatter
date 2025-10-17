@@ -38,9 +38,11 @@ def python_lint(root_path: str, auto_format: bool = False):
         " ".join(
             [
                 "bash",
-                f"{root_path}/scripts/lint/check_pylint.sh"
-                if not auto_format
-                else f"{root_path}/scripts/lint/autoformat.sh",
+                (
+                    f"{root_path}/scripts/lint/check_pylint.sh"
+                    if not auto_format
+                    else f"{root_path}/scripts/lint/autoformat.sh"
+                ),
                 f"{root_path}/",
             ]
         ),

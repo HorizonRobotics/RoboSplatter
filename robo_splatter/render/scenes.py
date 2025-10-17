@@ -18,7 +18,6 @@
 import logging
 from dataclasses import dataclass
 
-
 import cv2
 import numpy as np
 import torch
@@ -219,7 +218,7 @@ class Scene(nn.Module):
         camera: Camera,
         instances_pose: dict[int, torch.Tensor] = None,
         render_type: SceneRenderType = SceneRenderType.BACKGROUND,
-        coord_system: RenderCoordSystem = RenderCoordSystem.GAUSSIAN,
+        coord_system: RenderCoordSystem = RenderCoordSystem.MUJOCO,
     ) -> RenderResult:
         gs_model = self.collect_gaussians(
             c2w=camera.c2w,

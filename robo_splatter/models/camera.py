@@ -27,131 +27,6 @@ __all__ = [
 
 
 @dataclass
-class BaseCamera:
-    """Will be deprecated in next version."""
-
-    # (4, 4) Camera-to-world matrix
-    c2w: torch.Tensor
-    # (3, 3) Intrinsic matrix [[fx, 0, cx], [0, fy, cy], [0, 0, 1]]
-    Ks: torch.Tensor
-    image_height: int
-    image_width: int
-    device: str = "cpu"
-
-    def __post_init__(self) -> None:
-        if isinstance(self.c2w, np.ndarray):
-            self.c2w = torch.from_numpy(self.c2w).float()
-        if isinstance(self.Ks, np.ndarray):
-            self.Ks = torch.from_numpy(self.Ks).float()
-
-        self.to(self.device)
-
-    @classmethod
-    def init_from_params(
-        cls,
-        R: np.ndarray,
-        T: np.ndarray,
-        fx: float,
-        fy: float,
-        cx: float,
-        cy: float,
-        image_height: int,
-        image_width: int,
-        device: str = "cpu",
-    ) -> None:
-        c2w = torch.eye(4, dtype=torch.float32)
-        c2w[:3, :3] = torch.from_numpy(R) @ cls.rot_aux.T
-        c2w[:3, 3] = torch.from_numpy(T)
-        Ks = torch.tensor(
-            [[fx, 0, cx], [0, fy, cy], [0, 0, 1]], dtype=torch.float32
-        )
-
-        return cls(
-            c2w=c2w,
-            Ks=Ks,
-            image_height=image_height,
-            image_width=image_width,
-            device=device,
-        )
-
-    @classmethod
-    def init_from_pose_list(
-        cls,
-        pose_list: np.ndarray,
-        camera_intrinsic: np.ndarray,
-        image_height: int,
-        image_width: int,
-        device: str = "cpu",
-    ) -> None:
-        # pose_list: [x, y, z, qx, qy, qz, qw]
-        T_cam2world = np.eye(4)
-        T_cam2world[:3, :3] = Rotation.from_quat(pose_list[3:]).as_matrix()
-        T_cam2world[:3, 3] = pose_list[:3]
-
-        return cls(
-            c2w=T_cam2world,
-            Ks=camera_intrinsic,
-            image_height=image_height,
-            image_width=image_width,
-            device=device,
-        )
-
-    def to(self, device: str) -> None:
-        for k, v in self.__dict__.items():
-            if isinstance(v, torch.Tensor):
-                self.__dict__[k] = v.to(device)
-
-    @property
-    def rot_aux(self):
-        return torch.tensor(
-            [[0, 0, 1], [-1, 0, 0], [0, -1, 0]], dtype=torch.float32
-        )
-
-    @property
-    def fovx(self):
-        half_w = torch.tensor(
-            self.image_width / 2, dtype=self.Ks.dtype, device=self.device
-        )
-        return 2 * torch.atan2(half_w, self.Ks[0, 0])
-
-    @property
-    def fovy(self):
-        half_h = torch.tensor(
-            self.image_height / 2, dtype=self.Ks.dtype, device=self.device
-        )
-        return 2 * torch.atan2(half_h, self.Ks[1, 1])
-
-    @property
-    def euler(self):
-        R = self.c2w[:3, :3].detach()
-        with torch.no_grad():
-            R_np = R.cpu().numpy()
-            c2w_rot = R_np @ self.rot_aux.numpy().T
-            rotation = Rotation.from_matrix(c2w_rot)
-            roll, pitch, yaw = rotation.as_euler("xyz")
-
-        return (
-            torch.tensor(yaw, device=self.device, dtype=R.dtype),
-            torch.tensor(pitch, device=self.device, dtype=R.dtype),
-            torch.tensor(roll, device=self.device, dtype=R.dtype),
-        )
-
-    @property
-    def mojuco_c2w(self) -> torch.Tensor:
-        # TODO: Support multi simulator refactor `mojuco_c2w` in the future
-        coord_align = torch.tensor(
-            [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, -1.0, 0.0, 0.0],
-                [0.0, 0.0, -1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ]
-        ).to(self.c2w)
-
-        return self.c2w @ coord_align
-
-
-@dataclass
 class Camera:
     """A class for batch processing of camera parameters.
 
@@ -223,20 +98,33 @@ class Camera:
         Returns:
             BatchCamera instance.
         """
-        pose_list = np.asarray(pose_list)
-        if pose_list.ndim == 1:
-            pose_list = pose_list[np.newaxis]
-        assert (
-            pose_list.shape[-1] == 7
-        ), f"Expected pose_list shape (*, 7), got {pose_list.shape}"
-        batch_size = pose_list.shape[0]
 
-        c2w = torch.eye(4, dtype=torch.float32).repeat(batch_size, 1, 1)
-        rotations = Rotation.from_quat(
-            pose_list[:, 3:]
-        ).as_matrix()  # (batch, 3, 3)
-        c2w[:, :3, :3] = torch.from_numpy(rotations).float()
-        c2w[:, :3, 3] = torch.from_numpy(pose_list[:, :3]).float()
+        pose_list = np.asarray(pose_list)
+        if pose_list.shape == (7,):
+            if pose_list.ndim == 1:
+                pose_list = pose_list[np.newaxis]
+            assert (
+                pose_list.shape[-1] == 7
+            ), f"Expected pose_list shape (*, 7), got {pose_list.shape}"
+            batch_size = pose_list.shape[0]
+
+            c2w = torch.eye(4, dtype=torch.float32).repeat(batch_size, 1, 1)
+            rotations = Rotation.from_quat(
+                pose_list[:, 3:]
+            ).as_matrix()  # (batch, 3, 3)
+            c2w[:, :3, :3] = torch.from_numpy(rotations).float()
+            c2w[:, :3, 3] = torch.from_numpy(pose_list[:, :3]).float()
+        elif pose_list.shape[-2:] == (4, 4):
+            if pose_list.ndim == 2:
+                pose_list = pose_list[np.newaxis]
+            assert pose_list.shape[-2:] == (
+                4,
+                4,
+            ), f"Expected pose_list shape (*, 4, 4), got {pose_list.shape}"
+            batch_size = pose_list.shape[0]
+            c2w = torch.from_numpy(pose_list).float()
+        else:
+            raise ValueError("pose_list must be shape [7] or [*,4,4]")
 
         camera_intrinsic = np.asarray(camera_intrinsic)
         if camera_intrinsic.ndim == 2:
