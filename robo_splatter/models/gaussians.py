@@ -53,7 +53,7 @@ class VanillaGaussians(nn.Module):
         self,
         model_path: str = None,
         device: str = "cuda",
-        detach_keys: list[str] = [
+        detach_keys: List[str] = [
             "activated_opacities",
             "means",
             "colors",
@@ -427,9 +427,9 @@ class VanillaGaussians(nn.Module):
 class RigidsGaussians(VanillaGaussians):
     def __init__(
         self,
-        instances: dict[int, GSInstance],
+        instances: Dict[int, GSInstance],
         device: str = "cuda",
-        detach_keys: list[str] = [
+        detach_keys: List[str] = [
             "activated_opacities",
             "means",
             "colors",
@@ -459,7 +459,7 @@ class RigidsGaussians(VanillaGaussians):
 
         return cls(instances, device, detach_keys)
 
-    def load_gs_models(self, instances: dict[int, GSInstance]) -> None:
+    def load_gs_models(self, instances: Dict[int, GSInstance]) -> None:
         """Load the GS models of the instances.
 
         Args:
@@ -558,7 +558,7 @@ class RigidsGaussians(VanillaGaussians):
         self,
         means: torch.Tensor,
         quats: torch.Tensor,
-        instances_pose: dict[int, torch.Tensor],
+        instances_pose: Dict[int, torch.Tensor],
     ):
         """Compute the transform of the GS models.
 
@@ -607,7 +607,7 @@ class RigidsGaussians(VanillaGaussians):
     def get_gaussians(
         self,
         c2w: torch.Tensor,
-        instances_pose: dict[int, torch.Tensor] = None,
+        instances_pose: Dict[int, torch.Tensor] = None,
         apply_activate: bool = True,
         filter_mask: torch.Tensor = None,
     ) -> GaussianData:
@@ -662,7 +662,7 @@ class RigidsGaussians(VanillaGaussians):
 
     def collect_gaussians_from_ids(
         self, ids: List[int]
-    ) -> dict[int, GaussianData]:
+    ) -> Dict[int, GaussianData]:
         """Collect GaussianData objects from the given instance ids.
 
         Args:

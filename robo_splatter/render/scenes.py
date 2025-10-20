@@ -17,6 +17,7 @@
 
 import logging
 from dataclasses import dataclass
+from typing import Dict
 
 import cv2
 import numpy as np
@@ -39,25 +40,71 @@ __all__ = [
 
 @dataclass
 class RenderResult:
-    rgb: np.ndarray
-    depth: np.ndarray
-    opacity: np.ndarray
+    rgb: torch.Tensor        # (B,H,W,3) float in [0,1] or uint8; kept as torch.Tensor
+    depth: torch.Tensor      # (B,H,W) float depth; kept as torch.Tensor
+    opacity: torch.Tensor    # (B,H,W,1) or (B,H,W) alpha/opacity; kept as torch.Tensor
     bgr2rgb: bool = False
+    output_device: str = "cuda"
 
-    def __post_init__(
-        self,
-    ):
+
+    def __post_init__(self):
+        if isinstance(self.rgb, torch.Tensor):
+            self.rgb = self.rgb.detach()
+            if self.output_device == "cpu":
+                self.rgb = self.rgb.to(self.output_device)
         if isinstance(self.depth, torch.Tensor):
-            self.depth = self.depth.detach().cpu().numpy()
+            self.depth = self.depth.detach()
+            if self.output_device == "cpu":
+                self.depth = self.depth.to(self.output_device)
         if isinstance(self.opacity, torch.Tensor):
-            opacity = self.opacity.detach().cpu().numpy()
-            self.opacity = (opacity * 255).astype(np.uint8)
+            self.opacity = self.opacity.detach()
+            if self.output_device == "cpu":
+                self.opacity = self.opacity.to(self.output_device)
+
+    @property
+    def rgb_np(self) -> np.ndarray:
         if isinstance(self.rgb, torch.Tensor):
             rgb = self.rgb.detach().cpu().numpy()
-            self.rgb = (rgb * 255).astype(np.uint8)
-        if self.bgr2rgb:
-            self.rgb = self.rgb[..., ::-1]
+            rgb = (rgb * 255).astype(np.uint8)
+            if self.bgr2rgb:
+                rgb = rgb[..., ::-1]
+            return rgb
+        return self.rgb
 
+    @property
+    def depth_np(self) -> np.ndarray:
+        if isinstance(self.depth, torch.Tensor):
+            return self.depth.detach().cpu().numpy()
+        return self.depth
+
+    @property
+    def opacity_np(self) -> np.ndarray:
+        if isinstance(self.opacity, torch.Tensor):
+            opacity = self.opacity.detach().cpu().numpy()
+            opacity = (opacity * 255).astype(np.uint8)
+            return opacity
+        return self.opacity
+
+    def to_numpy(self) -> dict:
+        """Convert internal tensors to numpy like the original __post_init__ logic.
+
+        - rgb: float [0,1] -> uint8 [0,255] and apply BGR->RGB if needed
+        - opacity: float [0,1] -> uint8 [0,255]
+        - depth: float tensor -> float32 numpy
+        Returns a dict without mutating internal tensors.
+        """
+        if isinstance(self.depth, torch.Tensor):
+            depth_np = self.depth.detach().cpu().numpy()
+        if isinstance(self.opacity, torch.Tensor):
+            opacity_np = self.opacity.detach().cpu().numpy()
+            opacity_np = (opacity_np * 255).astype(np.uint8)
+        if isinstance(self.rgb, torch.Tensor):
+            rgb = self.rgb.detach().cpu().numpy()
+            rgb_np = (rgb * 255).astype(np.uint8)
+        if self.bgr2rgb:
+            rgb_np = rgb_np[..., ::-1]
+
+        return {"rgb": rgb_np, "depth": depth_np, "opacity": opacity_np}
 
 @dataclass
 class SceneRenderType(str):
@@ -170,7 +217,7 @@ class Scene(nn.Module):
     def collect_gaussians(
         self,
         c2w: torch.Tensor,
-        instances_pose: dict[int, torch.Tensor] = None,
+            instances_pose: Dict[int, torch.Tensor] = None,
         render_type: SceneRenderType = SceneRenderType.BACKGROUND,
     ) -> GaussianData:
         if render_type == SceneRenderType.BACKGROUND:
@@ -216,7 +263,7 @@ class Scene(nn.Module):
     def render(
         self,
         camera: Camera,
-        instances_pose: dict[int, torch.Tensor] = None,
+        instances_pose: Dict[int, torch.Tensor] = None,
         render_type: SceneRenderType = SceneRenderType.BACKGROUND,
         coord_system: RenderCoordSystem = RenderCoordSystem.MUJOCO,
     ) -> RenderResult:

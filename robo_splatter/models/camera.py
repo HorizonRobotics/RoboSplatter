@@ -16,6 +16,7 @@
 
 
 from dataclasses import dataclass
+from typing import Union
 
 import numpy as np
 import torch
@@ -146,14 +147,68 @@ class Camera:
             device=device,
         )
 
-    def to(self, device: str) -> "Camera":
-        if device.startswith("cuda") and not torch.cuda.is_available():
+    @classmethod
+    def init_from_pose_tensor(
+        cls,
+        c2w: torch.Tensor,
+        Ks: torch.Tensor,
+        image_height: int,
+        image_width: int,
+        device: Union[str, torch.device] = "cpu",
+    ) -> "Camera":
+        """Initialize directly from batched torch tensors for extrinsics and intrinsics.
+
+        Args:
+            c2w: Camera-to-world matrix tensor with shape (4, 4) or (B, 4, 4).
+            Ks: Intrinsic matrix tensor with shape (3, 3) or (B, 3, 3).
+            image_height: Image height in pixels.
+            image_width: Image width in pixels.
+            device: Target device for the tensors.
+
+        Returns:
+            Camera instance.
+        """
+        # Normalize device to string
+        if isinstance(device, torch.device):
+            device_str = str(device)
+        else:
+            device_str = device
+
+        if c2w.ndim == 2:
+            c2w = c2w.unsqueeze(0)
+        if Ks.ndim == 2:
+            Ks = Ks.unsqueeze(0).expand(c2w.shape[0], -1, -1)
+
+        # Validate shapes
+        assert c2w.shape[-2:] == (4, 4), f"Expected c2w (*,4,4), got {c2w.shape}"
+        assert Ks.shape[-2:] == (3, 3), f"Expected Ks (*,3,3), got {Ks.shape}"
+        assert c2w.shape[0] == Ks.shape[0], f"Batch size mismatch {c2w.shape[0]} vs {Ks.shape[0]}"
+
+        c2w = c2w.to(device_str, dtype=torch.float32)
+        Ks = Ks.to(device_str, dtype=torch.float32)
+
+        return cls(
+            c2w=c2w,
+            Ks=Ks,
+            image_height=image_height,
+            image_width=image_width,
+            device=device_str,
+        )
+
+    def to(self, device: Union[str, torch.device]) -> "Camera":
+        # Normalize device
+        if isinstance(device, torch.device):
+            device_str = str(device)
+        else:
+            device_str = device
+
+        if device_str.startswith("cuda") and not torch.cuda.is_available():
             raise ValueError("CUDA is not available")
 
         for k, v in self.__dict__.items():
             if isinstance(v, torch.Tensor):
-                self.__dict__[k] = v.to(device)
-        self.device = device
+                self.__dict__[k] = v.to(device_str)
+        self.device = device_str
 
         return self
 

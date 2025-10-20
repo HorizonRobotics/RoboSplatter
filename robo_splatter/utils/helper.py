@@ -16,6 +16,7 @@
 
 
 import logging
+from typing import List
 
 import cv2
 import imageio
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_mp4_from_images(
-    images: list[np.ndarray],
+    images: List[np.ndarray],
     output_path: str,
     to_uint8: bool = False,
     fps: float = 10,
