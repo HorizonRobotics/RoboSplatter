@@ -40,9 +40,9 @@ __all__ = [
 
 @dataclass
 class RenderResult:
-    rgb: torch.Tensor        # (B,H,W,3) float in [0,1] or uint8; kept as torch.Tensor
-    depth: torch.Tensor      # (B,H,W) float depth; kept as torch.Tensor
-    opacity: torch.Tensor    # (B,H,W,1) or (B,H,W) alpha/opacity; kept as torch.Tensor
+    rgb: torch.Tensor | np.ndarray         # (B,H,W,3) float in [0,1] or uint8; kept as torch.Tensor
+    depth: torch.Tensor | np.ndarray       # (B,H,W) float depth; kept as torch.Tensor
+    opacity: torch.Tensor | np.ndarray     # (B,H,W,1) or (B,H,W) alpha/opacity; kept as torch.Tensor
     bgr2rgb: bool = False
     output_device: str = "cuda"
 
@@ -61,30 +61,6 @@ class RenderResult:
             if self.output_device == "cpu":
                 self.opacity = self.opacity.to(self.output_device)
 
-    @property
-    def rgb_np(self) -> np.ndarray:
-        if isinstance(self.rgb, torch.Tensor):
-            rgb = self.rgb.detach().cpu().numpy()
-            rgb = (rgb * 255).astype(np.uint8)
-            if self.bgr2rgb:
-                rgb = rgb[..., ::-1]
-            return rgb
-        return self.rgb
-
-    @property
-    def depth_np(self) -> np.ndarray:
-        if isinstance(self.depth, torch.Tensor):
-            return self.depth.detach().cpu().numpy()
-        return self.depth
-
-    @property
-    def opacity_np(self) -> np.ndarray:
-        if isinstance(self.opacity, torch.Tensor):
-            opacity = self.opacity.detach().cpu().numpy()
-            opacity = (opacity * 255).astype(np.uint8)
-            return opacity
-        return self.opacity
-
     def to_numpy(self) -> dict:
         """Convert internal tensors to numpy like the original __post_init__ logic.
 
@@ -94,17 +70,16 @@ class RenderResult:
         Returns a dict without mutating internal tensors.
         """
         if isinstance(self.depth, torch.Tensor):
-            depth_np = self.depth.detach().cpu().numpy()
+            self.depth = self.depth.detach().cpu().numpy()
         if isinstance(self.opacity, torch.Tensor):
             opacity_np = self.opacity.detach().cpu().numpy()
-            opacity_np = (opacity_np * 255).astype(np.uint8)
+            self.opacity = (opacity_np * 255).astype(np.uint8)
         if isinstance(self.rgb, torch.Tensor):
             rgb = self.rgb.detach().cpu().numpy()
-            rgb_np = (rgb * 255).astype(np.uint8)
+            self.rgb = (rgb * 255).astype(np.uint8)
         if self.bgr2rgb:
-            rgb_np = rgb_np[..., ::-1]
+            self.rgb = self.rg[..., ::-1]
 
-        return {"rgb": rgb_np, "depth": depth_np, "opacity": opacity_np}
 
 @dataclass
 class SceneRenderType(str):
@@ -263,7 +238,7 @@ class Scene(nn.Module):
         camera: Camera,
         instances_pose: Dict[int, torch.Tensor] = None,
         render_type: SceneRenderType = SceneRenderType.BACKGROUND,
-        coord_system: RenderCoordSystem = RenderCoordSystem.MUJOCO,
+        coord_system: RenderCoordSystem = RenderCoordSystem.SIM,
     ) -> RenderResult:
         gs_model = self.collect_gaussians(
             c2w=camera.c2w,
