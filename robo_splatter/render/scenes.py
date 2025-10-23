@@ -115,10 +115,8 @@ class SceneRenderType(str):
 
 @dataclass
 class RenderCoordSystem(str):
-    MUJOCO: str = "MUJOCO"
+    SIM: str = "SIM"
     GAUSSIAN: str = "GAUSSIAN"
-    ISAAC: str = "ISAAC"
-
 
 class Scene(nn.Module):
     def __init__(
@@ -273,10 +271,8 @@ class Scene(nn.Module):
             render_type=render_type,
         )
 
-        if coord_system == RenderCoordSystem.MUJOCO:
-            camera.c2w = camera.mojuco_c2w
-        elif coord_system == RenderCoordSystem.ISAAC:
-            camera.c2w = camera.isaac_c2w
+        if coord_system == RenderCoordSystem.SIM:
+            camera.c2w = camera.sim_c2w
 
         outputs = self.render_gaussians(
             gs=gs_model,

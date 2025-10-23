@@ -45,7 +45,7 @@ class Camera:
     image_width: int
     device: str = "cuda"
 
-    MOJUCO_COORD_ALIGN = torch.tensor(
+    SIM_COORD_ALIGN = torch.tensor(
         [
             [1.0, 0.0, 0.0, 0.0],
             [0.0, -1.0, 0.0, 0.0],
@@ -55,15 +55,6 @@ class Camera:
         dtype=torch.float32,
     )
 
-    ISAAC_COORD_ALIGN = torch.tensor(
-        [
-            [0.0, 0.0, -1.0, 0.0],
-            [0.0, -1.0, 0.0, 0.0],
-            [-1.0, 0.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ],
-        dtype=torch.float32,
-    )
 
     def __post_init__(self) -> None:
         if isinstance(self.c2w, np.ndarray):
@@ -213,18 +204,9 @@ class Camera:
         return self
 
     @property
-    def mojuco_c2w(self) -> torch.Tensor:
+    def sim_c2w(self) -> torch.Tensor:
         coord_align = (
             self.MOJUCO_COORD_ALIGN.to(self.c2w)
-            .unsqueeze(0)
-            .repeat(self.c2w.shape[0], 1, 1)
-        )
-        return self.c2w @ coord_align
-
-    @property
-    def isaac_c2w(self) -> torch.Tensor:
-        coord_align = (
-            self.ISAAC_COORD_ALIGN.to(self.c2w)
             .unsqueeze(0)
             .repeat(self.c2w.shape[0], 1, 1)
         )
