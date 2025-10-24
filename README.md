@@ -42,7 +42,7 @@ pip install -e . #uv
 # 安装 huggingface_hub
 # pip install huggingface_hub
 
-python -m huggingface_hub.commands.huggingface_cli download HorizonRobotics/RoboSplatter --repo-type dataset --local-dir ./assets
+python -m huggingface_hub.commands.hf download HorizonRobotics/RoboSplatter --repo-type dataset --local-dir ./assets
 # desk2.ply, golden_cup.ply, lab_table.ply, office.ply 等文件
 ```
 
@@ -68,7 +68,7 @@ python robo_splatter/scripts/render_scene_batch.py --data_file config/gs_data_fg
   --camera_intrinsic "[[256.0, 0.0, 512.0], [0.0, 256.0, 512.0], [0.0, 0.0, 1.0]]" \
   --image_height 1024 \
   --image_width 1024 \
-  --coord_system MUJOCO \
+  --coord_system SIM \
   --output_dir "./output/mix_bg_fg_demo" \
   --gen_mp4_path "./output/mix_bg_fg_demo/render.mp4"
 ```

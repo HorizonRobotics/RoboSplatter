@@ -1,6 +1,6 @@
 [project]
 name = "robo_splatter"
-version = "0.1.0"
+version = "0.1.1"
 description = "Gaussian Splatting for Robotic Simulation"
 readme = "README.md"
 requires-python = ">=3.8"

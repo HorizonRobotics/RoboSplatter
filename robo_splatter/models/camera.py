@@ -92,7 +92,7 @@ class Camera:
         """
 
         pose_list = np.asarray(pose_list)
-        if pose_list.shape == (7,):
+        if pose_list.shape[-1] == 7:
             if pose_list.ndim == 1:
                 pose_list = pose_list[np.newaxis]
             assert (
@@ -206,7 +206,7 @@ class Camera:
     @property
     def sim_c2w(self) -> torch.Tensor:
         coord_align = (
-            self.MOJUCO_COORD_ALIGN.to(self.c2w)
+            self.SIM_COORD_ALIGN.to(self.c2w)
             .unsqueeze(0)
             .repeat(self.c2w.shape[0], 1, 1)
         )

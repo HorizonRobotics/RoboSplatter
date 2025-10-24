@@ -78,7 +78,7 @@ class RenderResult:
             rgb = self.rgb.detach().cpu().numpy()
             self.rgb = (rgb * 255).astype(np.uint8)
         if self.bgr2rgb:
-            self.rgb = self.rg[..., ::-1]
+            self.rgb = self.rgb[..., ::-1]
 
 
 @dataclass
@@ -246,9 +246,12 @@ class Scene(nn.Module):
             render_type=render_type,
         )
 
+        assert coord_system in [RenderCoordSystem.SIM, RenderCoordSystem.GAUSSIAN], \
+            f"Invalid coordinate system: {coord_system}"
+            
         if coord_system == RenderCoordSystem.SIM:
             camera.c2w = camera.sim_c2w
-
+        
         outputs = self.render_gaussians(
             gs=gs_model,
             camera=camera,
