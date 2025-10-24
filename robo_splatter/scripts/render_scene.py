@@ -94,7 +94,7 @@ def parse_args():
         "--coord_system",
         type=str,
         default="GAUSSIAN",
-        help="see `RenderCoordSystem`, enumerated in `MUJOCO`, `GAUSSIAN`, `ISAAC`",  # noqa
+        help="see `RenderCoordSystem`, enumerated in `SIM`, `GAUSSIAN`",  # noqa
     )
     parser.add_argument(
         "--scene_type",
@@ -167,6 +167,7 @@ def entrypoint() -> None:
             render_type=args.scene_type,
             coord_system=args.coord_system,
         )
+        render_result.to_numpy()
         for rgb, depth in zip(render_result.rgb, render_result.depth):
             images_cache.append([rgb, depth])
             depth_global_min = min(depth_global_min, depth.min())

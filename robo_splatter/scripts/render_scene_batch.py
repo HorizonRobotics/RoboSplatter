@@ -87,8 +87,8 @@ def parse_args():
     parser.add_argument(
         "--coord_system",
         type=str,
-        default="GAUSSIAN",
-        help="see `RenderCoordSystem`, enumerated in `MUJOCO`, `GAUSSIAN`, `ISAAC`",  # noqa
+        default="SIM",
+        help="see `RenderCoordSystem`, enumerated in `SIM`, `GAUSSIAN",  # noqa
     )
     parser.add_argument(
         "--scene_type",
@@ -123,6 +123,7 @@ def entrypoint() -> None:
 
     images_cache = []
     depth_global_min, depth_global_max = float("inf"), -float("inf")
+    import pdb; pdb.set_trace()
     camera = Camera.init_from_pose_list(
         pose_list=camera_extrinsic,
         camera_intrinsic=camera_intrinsic,
@@ -136,6 +137,7 @@ def entrypoint() -> None:
         render_type=args.scene_type,
         coord_system=args.coord_system,
     )
+    render_result.to_numpy()
 
     for i in range(len(render_result.rgb)):
         images_cache.append([render_result.rgb[i], render_result.depth[i]])

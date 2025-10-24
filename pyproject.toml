@@ -1,22 +1,22 @@
 [project]
 name = "robo_splatter"
-version = "0.1.0"
+version = "0.1.1"
 description = "Gaussian Splatting for Robotic Simulation"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.8"
 dependencies = [
-    "dataclasses-json>=0.6.7",
+    "dataclasses-json", #>=0.6.7
     "gsplat>=1.5.3",
-    "imageio>=2.37.0",
-    "imageio-ffmpeg>=0.6.0",
+    "imageio",
+    "imageio-ffmpeg",
     "opencv-python-headless",
-    "plyfile>=1.1.2",
-    "pyyaml>=6.0.2",
-    "scikit-learn>=1.7.1",
+    "plyfile",
+    "pyyaml", #6.0.2
+    "scikit-learn", #1.7.1
     "scipy",
-    "numpy==1.26.4",
+    "numpy<2", #1.26.4
     "torch",
-    "tqdm>=4.67.1",
+    "tqdm",
 ]
 
 [tool.setuptools]

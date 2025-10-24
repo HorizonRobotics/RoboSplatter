@@ -17,6 +17,7 @@
 
 import logging
 from dataclasses import dataclass
+from typing import Dict
 
 import cv2
 import numpy as np
@@ -39,19 +40,40 @@ __all__ = [
 
 @dataclass
 class RenderResult:
-    rgb: np.ndarray
-    depth: np.ndarray
-    opacity: np.ndarray
+    rgb: torch.Tensor | np.ndarray         # (B,H,W,3) float in [0,1] or uint8; kept as torch.Tensor
+    depth: torch.Tensor | np.ndarray       # (B,H,W) float depth; kept as torch.Tensor
+    opacity: torch.Tensor | np.ndarray     # (B,H,W,1) or (B,H,W) alpha/opacity; kept as torch.Tensor
     bgr2rgb: bool = False
+    output_device: str = "cuda"
 
-    def __post_init__(
-        self,
-    ):
+
+    def __post_init__(self):
+        if isinstance(self.rgb, torch.Tensor):
+            self.rgb = self.rgb.detach()
+            if self.output_device == "cpu":
+                self.rgb = self.rgb.to(self.output_device)
+        if isinstance(self.depth, torch.Tensor):
+            self.depth = self.depth.detach()
+            if self.output_device == "cpu":
+                self.depth = self.depth.to(self.output_device)
+        if isinstance(self.opacity, torch.Tensor):
+            self.opacity = self.opacity.detach()
+            if self.output_device == "cpu":
+                self.opacity = self.opacity.to(self.output_device)
+
+    def to_numpy(self) -> dict:
+        """Convert internal tensors to numpy like the original __post_init__ logic.
+
+        - rgb: float [0,1] -> uint8 [0,255] and apply BGR->RGB if needed
+        - opacity: float [0,1] -> uint8 [0,255]
+        - depth: float tensor -> float32 numpy
+        Returns a dict without mutating internal tensors.
+        """
         if isinstance(self.depth, torch.Tensor):
             self.depth = self.depth.detach().cpu().numpy()
         if isinstance(self.opacity, torch.Tensor):
-            opacity = self.opacity.detach().cpu().numpy()
-            self.opacity = (opacity * 255).astype(np.uint8)
+            opacity_np = self.opacity.detach().cpu().numpy()
+            self.opacity = (opacity_np * 255).astype(np.uint8)
         if isinstance(self.rgb, torch.Tensor):
             rgb = self.rgb.detach().cpu().numpy()
             self.rgb = (rgb * 255).astype(np.uint8)
@@ -68,10 +90,8 @@ class SceneRenderType(str):
 
 @dataclass
 class RenderCoordSystem(str):
-    MUJOCO: str = "MUJOCO"
+    SIM: str = "SIM"
     GAUSSIAN: str = "GAUSSIAN"
-    ISAAC: str = "ISAAC"
-
 
 class Scene(nn.Module):
     def __init__(
@@ -170,7 +190,7 @@ class Scene(nn.Module):
     def collect_gaussians(
         self,
         c2w: torch.Tensor,
-        instances_pose: dict[int, torch.Tensor] = None,
+            instances_pose: Dict[int, torch.Tensor] = None,
         render_type: SceneRenderType = SceneRenderType.BACKGROUND,
     ) -> GaussianData:
         if render_type == SceneRenderType.BACKGROUND:
@@ -216,9 +236,9 @@ class Scene(nn.Module):
     def render(
         self,
         camera: Camera,
-        instances_pose: dict[int, torch.Tensor] = None,
+        instances_pose: Dict[int, torch.Tensor] = None,
         render_type: SceneRenderType = SceneRenderType.BACKGROUND,
-        coord_system: RenderCoordSystem = RenderCoordSystem.MUJOCO,
+        coord_system: RenderCoordSystem = RenderCoordSystem.SIM,
     ) -> RenderResult:
         gs_model = self.collect_gaussians(
             c2w=camera.c2w,
@@ -226,11 +246,12 @@ class Scene(nn.Module):
             render_type=render_type,
         )
 
-        if coord_system == RenderCoordSystem.MUJOCO:
-            camera.c2w = camera.mojuco_c2w
-        elif coord_system == RenderCoordSystem.ISAAC:
-            camera.c2w = camera.isaac_c2w
-
+        assert coord_system in [RenderCoordSystem.SIM, RenderCoordSystem.GAUSSIAN], \
+            f"Invalid coordinate system: {coord_system}"
+            
+        if coord_system == RenderCoordSystem.SIM:
+            camera.c2w = camera.sim_c2w
+        
         outputs = self.render_gaussians(
             gs=gs_model,
             camera=camera,

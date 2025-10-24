@@ -199,7 +199,7 @@ class GaussianData:
 class GSInstance(DataClassJsonMixin):
     gs_model_path: str
     mesh_model_path: Optional[str] = None
-    init_pose: list[float] = (0, 0, 0, 0, 0, 0, 1)  # [x, y, z, qx, qy, qz, qw]
+    init_pose: List[float] = (0, 0, 0, 0, 0, 0, 1)  # [x, y, z, qx, qy, qz, qw]
     instance_name: Optional[str] = None
     class_name: Optional[str] = None
     scale: float = 1.0
