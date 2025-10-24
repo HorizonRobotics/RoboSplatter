@@ -17,7 +17,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Union
 
 import cv2
 import numpy as np
@@ -40,9 +40,9 @@ __all__ = [
 
 @dataclass
 class RenderResult:
-    rgb: torch.Tensor | np.ndarray         # (B,H,W,3) float in [0,1] or uint8; kept as torch.Tensor
-    depth: torch.Tensor | np.ndarray       # (B,H,W) float depth; kept as torch.Tensor
-    opacity: torch.Tensor | np.ndarray     # (B,H,W,1) or (B,H,W) alpha/opacity; kept as torch.Tensor
+    rgb: Union[torch.Tensor, np.ndarray]         # (B,H,W,3) float in [0,1] or uint8; kept as torch.Tensor
+    depth: Union[torch.Tensor, np.ndarray]       # (B,H,W) float depth; kept as torch.Tensor
+    opacity: Union[torch.Tensor, np.ndarray]     # (B,H,W,1) or (B,H,W) alpha/opacity; kept as torch.Tensor
     bgr2rgb: bool = False
     output_device: str = "cuda"
 
