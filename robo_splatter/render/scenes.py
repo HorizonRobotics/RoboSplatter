@@ -43,7 +43,6 @@ class RenderResult:
     rgb: Union[torch.Tensor, np.ndarray]         # (B,H,W,3) float in [0,1] or uint8; kept as torch.Tensor
     depth: Union[torch.Tensor, np.ndarray]       # (B,H,W) float depth; kept as torch.Tensor
     opacity: Union[torch.Tensor, np.ndarray]     # (B,H,W,1) or (B,H,W) alpha/opacity; kept as torch.Tensor
-    bgr2rgb: bool = False
     output_device: str = "cuda"
 
 
@@ -61,7 +60,7 @@ class RenderResult:
             if self.output_device == "cpu":
                 self.opacity = self.opacity.to(self.output_device)
 
-    def to_numpy(self) -> dict:
+    def to_numpy(self, bgr2rgb: bool = False) -> dict:
         """Convert internal tensors to numpy like the original __post_init__ logic.
 
         - rgb: float [0,1] -> uint8 [0,255] and apply BGR->RGB if needed
@@ -77,7 +76,7 @@ class RenderResult:
         if isinstance(self.rgb, torch.Tensor):
             rgb = self.rgb.detach().cpu().numpy()
             self.rgb = (rgb * 255).astype(np.uint8)
-        if self.bgr2rgb:
+        if bgr2rgb:
             self.rgb = self.rgb[..., ::-1]
 
 
