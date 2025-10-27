@@ -123,7 +123,7 @@ def entrypoint() -> None:
 
     images_cache = []
     depth_global_min, depth_global_max = float("inf"), -float("inf")
-    import pdb; pdb.set_trace()
+
     camera = Camera.init_from_pose_list(
         pose_list=camera_extrinsic,
         camera_intrinsic=camera_intrinsic,
