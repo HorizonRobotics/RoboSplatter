@@ -184,7 +184,7 @@ class Scene(nn.Module):
         if self.training:
             render_info["means2d"].retain_grad()
 
-        return RenderResult(bgr, depth, opacity, bgr2rgb=True)
+        return RenderResult(bgr, depth, opacity)
 
     def collect_gaussians(
         self,
