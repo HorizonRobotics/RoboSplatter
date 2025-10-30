@@ -6,15 +6,15 @@ readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "dataclasses-json", #>=0.6.7
-    "gsplat>=1.5.3",
+    "git+https://github.com/nerfstudio-project/gsplat.git@v1.5.3", #    "gsplat>=1.5.3",
     "imageio",
     "imageio-ffmpeg",
     "opencv-python-headless",
     "plyfile",
-    "pyyaml", #6.0.2
-    "scikit-learn", #1.7.1
+    "pyyaml",
+    "scikit-learn",
     "scipy",
-    "numpy<2", #1.26.4
+    "numpy<2",
     "torch",
     "tqdm",
 ]
