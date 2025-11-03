@@ -73,9 +73,21 @@ python robo_splatter/scripts/render_scene_batch.py --data_file config/gs_data_fg
   --gen_mp4_path "./output/mix_bg_fg_demo/render.mp4"
 ```
 
-**输出文件**：
+**输出文件| Output files**：
 - 渲染图片将保存在指定的 `output_dir` 目录
 - 如果指定了 `--gen_mp4_path`，将生成视频文件
+
+
+## 应用示例：
+### Random GS Background in [RoboTwin2.0](https://github.com/robotwin-Platform/RoboTwin)
+
+![robotwin_gs_random](./assets/robotwin_gs_random.gif)
+
+### GS Background for diversity simulatior from [RoboVerse](https://github.com/RoboVerseOrg/RoboVerse)
+
+![Diversity Sim](./assets/diversity_sim.jpeg)
+
+
 
 ## 🚗 目录结构 | Directory Structure
 
