@@ -79,11 +79,11 @@ python robo_splatter/scripts/render_scene_batch.py --data_file config/gs_data_fg
 
 
 ## 应用示例：
-### Random GS Background in RoboTwin2.0(https://github.com/robotwin-Platform/RoboTwin)
+### Random GS Background in [RoboTwin2.0](https://github.com/robotwin-Platform/RoboTwin)
 
 ![robotwin_gs_random](./assets/robotwin_gs_random.gif)
 
-### GS Background for diversity simulatior from RoboVerse(https://github.com/RoboVerseOrg/RoboVerse)
+### GS Background for diversity simulatior from [RoboVerse](https://github.com/RoboVerseOrg/RoboVerse)
 
 ![Diversity Sim](./assets/diversity_sim.jpeg)
 
