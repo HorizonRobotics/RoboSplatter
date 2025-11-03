@@ -78,7 +78,7 @@ python robo_splatter/scripts/render_scene_batch.py --data_file config/gs_data_fg
 - 如果指定了 `--gen_mp4_path`，将生成视频文件
 
 
-## 应用示例：
+## 应用示例 | Application Examples：
 ### Random GS Background in [RoboTwin2.0](https://github.com/robotwin-Platform/RoboTwin)
 
 ![robotwin_gs_random](./assets/robotwin_gs_random.gif)
