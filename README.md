@@ -19,9 +19,10 @@
 - CUDA >= 11.8
 - (Optional) [uv](https://docs.astral.sh/uv/) for faster environment setup
 
+
 ### 环境配置 ｜ Environment Configuration
 
-
+#### 源码安装
 ```sh
 # 1. Clone the repository
 git clone https://github.com/HorizonRobotics/RoboSplatter.git
@@ -35,6 +36,11 @@ cd RoboSplatter
 pip install -e . #uv
 
 ```
+#### 直接安装
+```sh
+  pip install robo-splatter@git+https://github.com/HorizonRobotics/RoboSplatter.git
+```
+
 
 ### 下载资产 ｜ Download Assets
 
